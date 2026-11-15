@@ -1,0 +1,557 @@
+**************************************************************************************************
+PRACTICAL2
+import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
+
+from tensorflow import keras
+from tensorflow.keras import layers
+print("TensorFlow Version:", tf.__version__)
+
+(x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
+
+print("Training images:", x_train.shape)
+print("Training labels:", y_train.shape)
+print("Testing images:", x_test.shape)
+print("Testing labels:", y_test.shape)
+
+x_train = x_train / 255.0
+x_test = x_test / 255.0
+
+plt.imshow(x_train[0], cmap='gray')
+plt.title("MNIST Handwritten Digit")
+plt.axis('off')
+plt.show()
+print("Actual Digit:", y_train[0])
+
+model = keras.Sequential([
+    layers.Flatten(input_shape=(28, 28)),
+    layers.Dense(128, activation='relu'),
+    layers.Dense(64, activation='relu'),
+    layers.Dense(10, activation='softmax')
+])
+
+model.summary()
+
+model.compile(
+    optimizer=keras.optimizers.SGD(learning_rate=0.01),
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+history = model.fit(
+    x_train,
+    y_train,
+    epochs=5,
+    batch_size=32,
+    validation_split=0.1
+)
+
+test_loss, test_accuracy = model.evaluate(x_test, y_test)
+print("Test Loss:", test_loss * 100, "%")
+print("Test Accuracy:", test_accuracy * 100, "%")
+
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.title("Training and Validation Loss")
+plt.xlabel("Epochs")
+plt.ylabel("Loss")
+plt.legend()
+plt.show()
+
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.title("Training and Validation Accuracy")
+plt.xlabel("Epochs")
+plt.ylabel("Accuracy")
+plt.legend()
+plt.show()
+
+prediction = model.predict(x_test[:1])
+predicted_digit = np.argmax(prediction)
+plt.imshow(x_test[0], cmap='gray')
+plt.title("Predicted Digit: " + str(predicted_digit))
+plt.axis('off')
+plt.show()
+print("Actual Digit:", y_test[0])
+print("Predicted Digit:", predicted_digit)
+
+
+***********************************************************************************************************
+PRACTICAL 3 
+import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
+from tensorflow import keras
+from tensorflow.keras import layers
+
+(x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
+
+
+print("Training images:", x_train.shape)
+print("Training labels:", y_train.shape)
+print("Testing images:", x_test.shape)
+print("Testing labels:", y_test.shape)
+
+
+x_train = x_train / 255.0
+x_test = x_test / 255.0
+
+plt.imshow(x_train[0], cmap='gray')
+plt.title("MNIST Handwritten Digit")
+plt.axis('off')
+plt.show()
+print("Actual Digit:", y_train[0])
+
+
+
+x_train = x_train.reshape(-1, 28, 28, 1)
+x_test = x_test.reshape(-1, 28, 28, 1)
+
+model = keras.Sequential([
+
+    layers.Conv2D(32, (3,3), activation='relu',
+                  input_shape=(28,28,1)),
+
+    layers.MaxPooling2D((2,2)),
+
+    layers.Flatten(),
+
+    layers.Dense(64, activation='relu'),
+    layers.Dense(10, activation='softmax')]) 
+
+
+
+
+model.compile(
+    optimizer='adam',
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+
+model.summary()
+
+history = model.fit(
+    x_train,
+    y_train,
+    epochs=5,
+    batch_size=32,
+    validation_split=0.1
+)
+
+test_loss, test_accuracy = model.evaluate(x_test, y_test)
+
+
+print("Test Loss:", test_loss)
+print("Test Accuracy:", test_accuracy)
+
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+
+plt.title("Model Accuracy")
+plt.xlabel("Epochs")
+plt.ylabel("Accuracy")
+plt.legend()
+plt.show()
+
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+
+plt.title("Model Loss")
+plt.xlabel("Epochs")
+plt.ylabel("Loss")
+plt.legend()
+plt.show()
+
+
+prediction = model.predict(x_test[:1])
+
+predicted_digit = np.argmax(prediction)
+
+plt.imshow(x_test[0].reshape(28,28), cmap='gray')
+plt.title("Predicted Digit: " + str(predicted_digit))
+plt.axis('off')
+plt.show()
+
+print("Actual Digit:", y_test[0])
+print("Predicted Digit:", predicted_digit)
+************************************************************************************************
+PRACTICAL4
+import numpy as np
+import matplotlib.pyplot as plt
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+
+(x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
+print("Training data:", x_train.shape)
+print("Testing data:", x_test.shape)
+
+x_train = x_train.astype('float32') / 255.0
+x_test = x_test.astype('float32') / 255.0
+
+
+x_train_normal = x_train[y_train == 0]
+
+x_test_normal = x_test[y_test == 0]
+x_test_anomaly = x_test[y_test != 0]
+print("Normal training images:", x_train_normal.shape)
+print("Normal testing images:", x_test_normal.shape)
+print("Anomaly testing images:", x_test_anomaly.shape)
+
+
+plt.figure(figsize=(10, 3))
+
+for i in range(5):
+    plt.subplot(1, 5, i + 1)
+    plt.imshow(x_train_normal[i], cmap='gray')
+    plt.axis('off')
+
+plt.show()
+
+
+
+input_img = keras.Input(shape=(28, 28))
+
+x = layers.Flatten()(input_img)
+x = layers.Dense(64, activation='relu')(x)
+x = layers.Dense(32, activation='relu')(x)
+
+encoded = layers.Dense(16, activation='relu')(x)
+
+encoder = keras.Model(input_img, encoded)
+
+
+latent_input = keras.Input(shape=(16,))
+
+x = layers.Dense(32, activation='relu')(latent_input)
+x = layers.Dense(64, activation='relu')(x)
+x = layers.Dense(784, activation='sigmoid')(x)
+
+decoded = layers.Reshape((28, 28))(x)
+decoder = keras.Model(latent_input, decoded)
+
+autoencoder_input = keras.Input(shape=(28, 28))
+
+encoded_image = encoder(autoencoder_input)
+decoded_image = decoder(encoded_image)
+
+autoencoder = keras.Model(autoencoder_input, decoded_image)
+
+
+autoencoder.compile(
+    optimizer='adam',
+    loss='mse',
+    metrics=['mae']
+)
+
+history = autoencoder.fit(
+    x_train_normal,
+    x_train_normal,
+    epochs=10,
+    batch_size=128,
+    validation_split=0.1
+)
+
+
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+
+plt.title('Autoencoder Training Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+plt.show()
+
+
+train_predictions = autoencoder.predict(x_train_normal)
+
+train_error = np.mean(
+    np.square(x_train_normal - train_predictions),
+    axis=(1, 2)
+)
+
+threshold = np.percentile(train_error, 95)
+
+print("Anomaly Threshold:", threshold)
+
+
+test_images = np.concatenate([
+    x_test_normal[:100],
+    x_test_anomaly[:100]
+])
+
+test_predictions = autoencoder.predict(test_images)
+
+test_error = np.mean(
+    np.square(test_images - test_predictions),
+    axis=(1, 2)
+)
+
+results = test_error > threshold
+
+print("Total Images:", len(test_images))
+print("Detected Anomalies:", np.sum(results))
+print("Detected Normal Images:", np.sum(~results))
+
+plt.figure(figsize=(10, 4))
+
+for i in range(5):
+    plt.subplot(2, 5, i + 1)
+    plt.imshow(test_images[i], cmap='gray')
+    plt.title("Original")
+    plt.axis('off')
+
+    plt.subplot(2, 5, i + 6)
+    plt.imshow(test_predictions[i], cmap='gray')
+    plt.title("Reconstructed")
+    plt.axis('off')
+
+plt.show()
+
+**********************************************************************************************************
+PRACTICAL 5 
+import numpy as np
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, Dense, Lambda
+from tensorflow.keras.preprocessing.text import Tokenizer
+
+
+
+text = """Deep learning is a part of machine learning.
+Machine learning is a part of artificial intelligence.
+Deep learning uses neural networks.
+Neural networks are inspired by the human brain."""
+
+tokenizer = Tokenizer()
+tokenizer.fit_on_texts([text])
+
+sequences = tokenizer.texts_to_sequences([text])[0]
+
+word_index = tokenizer.word_index
+vocab_size = len(word_index) + 1
+
+print("Word Index:", word_index)
+print("Vocabulary Size:", vocab_size)
+print("Sequences:", sequences)
+
+
+
+window_size = 2
+
+X = []
+y = []
+
+for i in range(window_size, len(sequences) - window_size):
+
+    context = sequences[i-2:i] + sequences[i+1:i+3]
+    target = sequences[i]
+
+    X.append(context)
+    y.append(target)
+
+X = np.array(X)
+y = np.array(y)
+
+print("Input Context:", X)
+print("Target Words:", y)
+
+
+
+model = Sequential([
+    Embedding(vocab_size, 50, input_length=4),
+    Lambda(lambda x: tf.reduce_mean(x, axis=1)),
+    Dense(vocab_size, activation='softmax')
+])
+
+model.compile(
+    optimizer='adam',
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+model.summary()
+
+model.fit(X, y, epochs=100, verbose=1)
+
+
+
+
+def predict_word(context_words):
+
+    context = [word_index[w] for w in context_words]
+
+    context = np.array([context])
+
+    prediction = model.predict(context, verbose=0)
+
+    predicted_index = np.argmax(prediction)
+
+    for word, index in word_index.items():
+        if index == predicted_index:
+            return word
+
+context_words = ["deep", "is", "part", "a"]
+
+print("Context Words:", context_words)
+print("Predicted Word:", predict_word(context_words))
+
+
+print("CBOW Model Implemented Successfully!")
+****************************************************************************************************************
+PRACTICAL6
+import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
+from tensorflow.keras import layers, models
+from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
+
+(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
+print("Training data:", x_train.shape)
+print("Testing data:", x_test.shape)
+
+
+# Resize images to 96x96
+IMG_SIZE = 96
+
+x_train = tf.image.resize(x_train, (IMG_SIZE, IMG_SIZE))
+x_test = tf.image.resize(x_test, (IMG_SIZE, IMG_SIZE))
+
+# Apply MobileNetV2 preprocessing
+x_train = preprocess_input(x_train)
+x_test = preprocess_input(x_test)
+
+print("Training shape:", x_train.shape)
+print("Testing shape:", x_test.shape)
+
+base_model = MobileNetV2(
+    weights='imagenet',
+    include_top=False,
+    input_shape=(96, 96, 3)
+)
+
+# Freeze pre-trained layers
+base_model.trainable = False
+
+print("Pre-trained MobileNetV2 loaded successfully")
+
+
+model = models.Sequential([
+    base_model,
+    layers.GlobalAveragePooling2D(),
+    layers.Dense(128, activation='relu'),
+    layers.Dropout(0.3),
+    layers.Dense(10, activation='softmax')
+])
+
+model.summary()
+
+
+# Use a smaller subset for faster practical execution
+train_ds = tf.data.Dataset.from_tensor_slices(
+    (x_train[:10000], y_train[:10000].flatten())
+)
+
+test_ds = tf.data.Dataset.from_tensor_slices(
+    (x_test[:2000], y_test[:2000].flatten())
+)
+
+def prepare_data(image, label):
+    image = tf.cast(image, tf.float32)
+    image = tf.image.resize(image, (96, 96))
+    image = preprocess_input(image)
+    return image, label
+
+train_ds = train_ds.map(
+    prepare_data,
+    num_parallel_calls=tf.data.AUTOTUNE
+).shuffle(1000).batch(32).prefetch(tf.data.AUTOTUNE)
+
+test_ds = test_ds.map(
+    prepare_data,
+    num_parallel_calls=tf.data.AUTOTUNE
+).batch(32).prefetch(tf.data.AUTOTUNE)
+
+
+
+model.compile(
+    optimizer='adam',
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+history = model.fit(
+    train_ds,
+    epochs=5,
+    validation_data=test_ds
+)
+
+
+
+base_model.trainable = True
+
+# Freeze all except last 20 layers
+for layer in base_model.layers[:-20]:
+    layer.trainable = False
+
+# Keep Batch Normalization layers frozen
+for layer in base_model.layers:
+    if isinstance(layer, layers.BatchNormalization):
+        layer.trainable = False
+
+# Use a low learning rate
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(learning_rate=0.00001),
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+history_fine = model.fit(
+    train_ds,
+    epochs=3,
+    validation_data=test_ds
+)
+
+
+
+
+loss, accuracy = model.evaluate(test_ds)
+
+print("Test Loss:", loss)
+print("Test Accuracy:", accuracy * 100, "%")
+
+
+class_names = [
+    'airplane', 'automobile', 'bird', 'cat', 'deer',
+    'dog', 'frog', 'horse', 'ship', 'truck'
+]
+
+# Select one test image
+sample = tf.cast(x_test[0], tf.float32)
+sample = tf.image.resize(sample, (96, 96))
+sample = preprocess_input(sample)
+sample = tf.expand_dims(sample, axis=0)
+
+prediction = model.predict(sample)
+
+predicted_class = np.argmax(prediction)
+
+print("Predicted Object:", class_names[predicted_class])
+print("Actual Object:", class_names[int(y_test[0][0])])
+
+
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+
+plt.title('Model Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.show()
+
+
+print("Transfer Learning using MobileNetV2 completed successfully!")
+
