@@ -1,0 +1,694 @@
+============================================----------------------==========================================--------------=======================================================
+Practical 2
+import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
+
+from tensorflow import keras
+from tensorflow.keras import layers
+print("TensorFlow Version:", tf.__version__)
+TensorFlow Version: 2.21.0
+## Load dataset
+
+(x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
+print("Training images:", x_train.shape)
+print("Training labels:", y_train.shape)
+
+print("Testing images:", x_test.shape)
+print("Testing labels:", y_test.shape)
+Training images: (60000, 28, 28)
+Training labels: (60000,)
+Testing images: (10000, 28, 28)
+Testing labels: (10000,)
+
+## Normalize dataset
+x_train = x_train / 255.0
+x_test = x_test / 255.0
+plt.imshow(x_train[0], cmap='gray')
+plt.title("MNIST Handwritten Digit")
+plt.axis('off')
+plt.show()
+print("Actual Digit:", y_train[0])
+
+model = keras.Sequential([
+    layers.Flatten(input_shape=(28, 28)),
+    layers.Dense(128, activation='relu'),
+    layers.Dense(64, activation='relu'),
+    layers.Dense(10, activation='softmax')
+])
+
+model.summary()
+
+## Compile model 
+model.compile(
+    optimizer=keras.optimizers.SGD(learning_rate=0.01),
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+history = model.fit(
+    x_train,
+    y_train,
+    epochs=5,
+    batch_size=32,
+    validation_split=0.1
+)
+
+## Evalute the model
+test_loss, test_accuracy = model.evaluate(x_test, y_test)
+
+print("Test Loss:", test_loss * 100, "%")
+print("Test Accuracy:", test_accuracy * 100, "%")
+
+## Viz loss
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+
+plt.title("Training and Validation Loss")
+plt.xlabel("Epochs")
+plt.ylabel("Loss")
+plt.legend()
+plt.show()
+
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+
+plt.title("Training and Validation Accuracy")
+plt.xlabel("Epochs")
+plt.ylabel("Accuracy")
+plt.legend()
+plt.show()
+
+prediction = model.predict(x_test[:1])
+
+predicted_digit = np.argmax(prediction)
+
+plt.imshow(x_test[0], cmap='gray')
+plt.title("Predicted Digit: " + str(predicted_digit))
+plt.axis('off')
+plt.show()
+
+print("Actual Digit:", y_test[0])
+print("Predicted Digit:", predicted_digit)
+
+#matrix
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+y_pred = model.predict(x_test)
+
+y_pred = np.argmax(y_pred, axis=1)
+
+cm = confusion_matrix(y_test, y_pred)
+
+disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+
+disp.plot(cmap='Blues')
+
+plt.title("Confusion Matrix")
+plt.show()
+
+#numbers
+digit_names = [
+    "Zero", "One", "Two", "Three", "Four",
+    "Five", "Six", "Seven", "Eight", "Nine"
+]
+
+for i in range(10):
+    plt.subplot(2, 5, i + 1)
+    plt.imshow(x_train[i], cmap='gray')
+    plt.title(digit_names[y_train[i]])
+    plt.axis('off')
+
+plt.tight_layout()
+plt.show()
+
+============================================----------------------===================================---------=============================================================
+Practical 3
+#Aim: To build an image classification model by loading and preprocessing image data, defining the model architecture, training the model, and estimating its performance.
+import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
+
+from tensorflow import keras
+from tensorflow.keras import layers
+(x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
+print("Training images:", x_train.shape)
+print("Training labels:", y_train.shape)
+
+print("Testing images:", x_test.shape)
+print("Testing labels:", y_test.shape)
+Training images: (60000, 28, 28)
+Training labels: (60000,)
+Testing images: (10000, 28, 28)
+Testing labels: (10000,)
+# normalize dataset
+x_train = x_train / 255.0
+x_test = x_test / 255.0
+plt.imshow(x_train[0], cmap='gray')
+plt.title("MNIST Handwritten Digit")
+plt.axis('off')
+plt.show()
+
+print("Actual Digit:", y_train[0])
+# reshape image CNN expects image data in the format:
+#(Number of images, Height, Width, Channels)
+#Here:
+#- Height = 28
+#- Width = 28
+#- Channels = 1 because MNIST images are grayscale.
+
+x_train = x_train.reshape(-1, 28, 28, 1)
+x_test = x_test.reshape(-1, 28, 28, 1)
+model = keras.Sequential([
+
+    layers.Conv2D(32, (3,3), activation='relu',
+                  input_shape=(28,28,1)),
+
+    layers.MaxPooling2D((2,2)),
+
+    layers.Flatten(),
+
+    layers.Dense(64, activation='relu'),
+
+    layers.Dense(10, activation='softmax')
+])
+model.compile(
+    optimizer='adam',
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+WARNING:tensorflow:TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
+model.summary()
+
+history = model.fit(
+    x_train,
+    y_train,
+    epochs=5,
+    batch_size=32,
+    validation_split=0.1
+)
+
+test_loss, test_accuracy = model.evaluate(x_test, y_test)
+print("Test Loss:", test_loss)
+print("Test Accuracy:", test_accuracy)
+
+
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+
+plt.title("Model Accuracy")
+plt.xlabel("Epochs")
+plt.ylabel("Accuracy")
+plt.legend()
+plt.show()
+
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+
+plt.title("Model Loss")
+plt.xlabel("Epochs")
+plt.ylabel("Loss")
+plt.legend()
+plt.show()
+
+
+prediction = model.predict(x_test[:1])
+predicted_digit = np.argmax(prediction)
+plt.imshow(x_test[0].reshape(28,28), cmap='gray')
+plt.title("Predicted Digit: " + str(predicted_digit))
+plt.axis('off')
+plt.show()
+print("Actual Digit:", y_test[0])
+print("Predicted Digit:", predicted_digit)
+
+
+## matrix
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+# Predict all test images
+y_pred = model.predict(x_test)
+# Convert probabilities into predicted digits
+y_pred = np.argmax(y_pred, axis=1)
+# Create confusion matrix
+cm = confusion_matrix(y_test, y_pred)
+# Display confusion matrix
+disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+disp.plot(cmap='Blues')
+plt.title("Confusion Matrix")
+plt.show()
+
+
+
+digit_names = {
+    1: "One",
+    2: "Two",
+    3: "Three",
+    4: "Four",
+    5: "Five",
+    6: "Six",
+    7: "Seven",
+    8: "Eight",
+    9: "Nine"
+}
+
+plt.figure(figsize=(8, 8))
+
+for digit in range(1, 10):
+    index = np.where(y_test == digit)[0][0]
+    plt.subplot(3, 3, digit)
+    plt.imshow(x_test[index].reshape(28, 28), cmap='gray')
+    plt.title(digit_names[digit])
+    plt.axis('off')
+plt.tight_layout()
+plt.show()
+
+========================------------------------------================================================================================---------------------------------------
+Practical 4
+## 4 autoencoder 
+import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
+(x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
+#normalize and reshape 
+x_train = x_train.astype('float32') / 255.0
+x_test = x_test.astype('float32') / 255.0
+
+x_train = x_train.reshape(-1, 784)
+x_test = x_test.reshape(-1, 784)
+#select normal data train on 0
+x_train_normal = x_train[y_train == 0]
+
+x_test_normal = x_test[y_test == 0]
+x_test_anomaly = x_test[y_test != 0]
+#encoder
+encoder = tf.keras.Sequential([
+    tf.keras.layers.Input(shape=(784,)),
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dense(32, activation='relu')
+])
+#decoder
+decoder = tf.keras.Sequential([
+    tf.keras.layers.Input(shape=(32,)),
+    tf.keras.layers.Dense(128, activation='relu'),
+    tf.keras.layers.Dense(784, activation='sigmoid')
+])
+autoencoder = tf.keras.Sequential([encoder, decoder])
+#compile model
+autoencoder.compile(
+    optimizer='adam',
+    loss='mse',
+    metrics=['mae']
+)
+#Adam = Optimizer.
+#MSE = Loss function
+#MAE = Evaluation metric
+WARNING:tensorflow:TensorFlow GPU support is not available on native Windows for TensorFlow >= 2.11. Even if CUDA/cuDNN are installed, GPU will not be used. Please use WSL2 or the TensorFlow-DirectML plugin.
+#train
+history = autoencoder.fit(
+    x_train_normal,
+    x_train_normal,
+    epochs=5,
+    batch_size=256,
+    validation_split=0.1
+)
+#calaulate thersold 
+pred = autoencoder.predict(x_train_normal)
+
+error = np.mean(np.square(x_train_normal - pred), axis=1)
+
+threshold = np.percentile(error, 95)
+
+print("Threshold:", threshold)
+186/186 ━━━━━━━━━━━━━━━━━━━━ 0s 1ms/step 
+Threshold: 0.06417945
+#test normal and anomaly
+test_images = np.concatenate([
+    x_test_normal[:100],
+    x_test_anomaly[:100]
+])
+
+predictions = autoencoder.predict(test_images)
+
+test_error = np.mean(
+    np.square(test_images - predictions), axis=1
+)
+
+results = test_error > threshold
+#Select 100 normal images.
+# Select 100 anomaly images
+# Combine both datasets.
+# Reconstruct the images.
+# Calculate reconstruction error.
+# Compare error with threshold.
+
+print("Total Images:", len(test_images))
+print("Detected Anomalies:", np.sum(results))
+print("Detected Normal:", np.sum(~results))
+Total Images: 200
+Detected Anomalies: 97
+Detected Normal: 103
+plt.figure(figsize=(10, 4))
+
+for i in range(5):
+    plt.subplot(2, 5, i+1)
+    plt.imshow(test_images[i].reshape(28, 28), cmap='gray')
+    plt.title("Original")
+    plt.axis('off')
+
+    plt.subplot(2, 5, i+6)
+    plt.imshow(predictions[i].reshape(28, 28), cmap='gray')
+    plt.title("Reconstructed")
+    plt.axis('off')
+
+plt.show()
+
+==========================================---------------------------------------========================================================
+Pract 5
+import numpy as np
+import tensorflow as tf
+import matplotlib.pyplot as plt
+
+from tensorflow import keras
+from tensorflow.keras import layers
+from collections import Counter
+-
+text = """
+machine learning is very interesting
+deep learning is a part of machine learning
+artificial intelligence is changing the world
+machine learning helps computers learn patterns
+"""
+words = text.lower().split()
+print(words)
+##  create vocabulary
+vocab = sorted(set(words))
+word_to_index = {
+    word: i for i, word in enumerate(vocab)
+}
+index_to_word = {
+    i: word for word, i in word_to_index.items()
+}
+vocab_size = len(vocab)
+
+print("Vocabulary:", vocab)
+print("Vocabulary Size:", vocab_size)
+####set(words) removes duplicate words.
+#sorted() sorts the words.
+#word_to_index assigns a unique number to each word.
+#index_to_word converts numbers back into words.
+#vocab_size counts unique words.
+
+#Generate CBOW training data
+window_size = 2
+data = []
+for i in range(window_size, len(words) - window_size):
+
+    context = (
+        words[i-window_size:i] +
+        words[i+1:i+window_size+1]
+    )
+
+    target = words[i]
+
+    data.append((context, target))
+print("Training Data:")
+for context, target in data[:5]:
+    print("Context:", context, "Target:", target)
+##data.append() stores the input and output pair.
+
+#Convert training data into numerical form
+X = []
+y = []
+for context, target in data:
+    context_indices = [
+        word_to_index[word] for word in context
+    ]
+
+    target_index = word_to_index[target]
+
+    X.append(context_indices)
+    y.append(target_index)
+X = np.array(X)
+y = np.array(y)
+print("Input Shape:", X.shape)
+print("Output Shape:", y.shape)
+
+#Define the CBOW model
+model = keras.Sequential([
+
+    layers.Embedding(
+        input_dim=vocab_size,
+        output_dim=50
+    ),
+
+    layers.Lambda(
+        lambda x: tf.reduce_mean(x, axis=1)
+    ),
+
+    layers.Dense(
+        vocab_size,
+        activation='softmax'
+    )
+])
+###Embedding	Converts word indexes into vectors
+Lambda	Takes the average of context vectors
+Dense + Softmax	Predicts the target word
+
+
+model.compile(
+    optimizer='adam',
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+
+history = model.fit(
+    X,
+    y,
+    epochs=100,
+    batch_size=16,
+    verbose=1
+)
+
+plt.plot(history.history['loss'])
+
+plt.title("CBOW Model Training Loss")
+plt.xlabel("Epochs")
+plt.ylabel("Loss")
+
+plt.show()
+
+
+
+context_words = [
+    "machine",
+    "learning",
+    "very",
+    "interesting"
+]
+
+context_indices = [
+    word_to_index[word] for word in context_words
+]
+
+input_data = np.array([context_indices])
+
+prediction = model.predict(input_data)
+
+predicted_index = np.argmax(prediction)
+
+predicted_word = index_to_word[predicted_index]
+
+print("Context Words:", context_words)
+print("Predicted Target Word:", predicted_word)
+
+======================================================================================------------------------
+Practical 6
+import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
+
+from tensorflow.keras import layers, models
+base = tf.keras.applications.MobileNetV2(
+    weights='imagenet',
+    include_top=False,
+    input_shape=(96, 96, 3)
+)
+#MobileNetV2 is our pre-trained CNN.
+#ImageNet contains the original training images.
+#include_top=False removes the original classifier.
+
+Input image size is 96 × 96.
+
+base.trainable = False
+
+model = models.Sequential([
+    layers.Input(shape=(96, 96, 3)),
+
+    layers.Lambda(
+        tf.keras.applications.mobilenet_v2.preprocess_input
+    ),
+
+    base,
+
+    layers.GlobalAveragePooling2D(),
+
+    layers.Dense(128, activation='relu'),
+
+    layers.Dropout(0.3),
+
+    layers.Dense(10, activation='softmax')
+])
+#preprocess_input: Prepares images for MobileNetV2.
+#base: Extracts image features.
+#GlobalAveragePooling2D: Reduces feature dimensions.
+#Dense(128): Learns patterns.
+#Dropout(0.3): Reduces overfitting.
+#Dense(10): Predicts 10 categories.
+
+(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
+
+
+x_train = tf.image.resize(x_train, (96, 96))
+x_test = tf.image.resize(x_test, (96, 96))
+
+#Resizes images from 32 × 32 to 96 × 96 because MobileNetV2 is configured for 96 × 96 input images.
+
+model.compile(
+    optimizer='adam',
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+#Adam: Optimizer.
+#Sparse categorical crossentropy: Loss function.
+#Accuracy: Measures correct predictions.
+
+history = model.fit(
+    x_train, y_train,
+    epochs=3,
+    batch_size=32,
+    validation_data=(x_test, y_test)
+)
+
+
+#finetuning 
+base.trainable = True
+
+for layer in base.layers[:-20]:
+    layer.trainable = False
+
+for layer in base.layers:
+    if isinstance(layer, layers.BatchNormalization):
+        layer.trainable = False
+
+##Unfreezes the base model.
+Keeps the first layers frozen.
+Makes the last 20 layers trainable.
+Keeps Batch Normalization layers frozen for stable training.
+
+
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(0.0001),
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+##Recompiles the model with a smaller learning rate for fine-tuning.
+
+history_fine = model.fit(
+    x_train, y_train,
+    epochs=2,
+    batch_size=32,
+    validation_data=(x_test, y_test)
+)
+##Trains the model again to adjust the selected pre-trained weights.
+
+
+## Evaluate model final model using testing images
+loss, accuracy = model.evaluate(x_test, y_test)
+
+print("Test Accuracy:", accuracy)
+
+graph##
+plt.plot(history.history['accuracy'])
+plt.plot(history_fine.history['accuracy'])
+
+plt.title("Model Accuracy")
+plt.xlabel("Epochs")
+plt.ylabel("Accuracy")
+plt.legend(["Initial Training", "Fine Tuning"])
+plt.show()
+
+============================================-----------------------------------------------
+Practical 66
+# 1. Import libraries
+import tensorflow as tf
+from tensorflow.keras import layers, models
+
+# 2. Load CIFAR-10 dataset
+(x_train, y_train), (x_test, y_test) = tf.keras.datasets.cifar10.load_data()
+
+# 3. Resize images
+x_train = tf.image.resize(x_train, (96, 96))
+x_test = tf.image.resize(x_test, (96, 96))
+
+# 4. Load pre-trained MobileNetV2
+base = tf.keras.applications.MobileNetV2(
+    weights='imagenet',
+    include_top=False,
+    input_shape=(96, 96, 3)
+)
+
+# 5. Freeze base model
+base.trainable = False
+
+# 6. Add custom classifier
+model = models.Sequential([
+    layers.Input(shape=(96, 96, 3)),
+    layers.Lambda(tf.keras.applications.mobilenet_v2.preprocess_input),
+    base,
+    layers.GlobalAveragePooling2D(),
+    layers.Dense(128, activation='relu'),
+    layers.Dense(10, activation='softmax')
+])
+
+# 7. Compile model
+model.compile(
+    optimizer='adam',
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+# 8. Train model
+model.fit(
+    x_train, y_train,
+    epochs=3,
+    batch_size=32,
+    validation_data=(x_test, y_test)
+)
+
+# 9. Fine-tuning: Unfreeze last 20 layers
+base.trainable = True
+
+for layer in base.layers[:-20]:
+    layer.trainable = False
+
+# 10. Compile again with smaller learning rate
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(0.0001),
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+# 11. Train again
+model.fit(
+    x_train, y_train,
+    epochs=2,
+    batch_size=32,
+    validation_data=(x_test, y_test)
+)
+
+# 12. Evaluate model
+loss, accuracy = model.evaluate(x_test, y_test)
+
+print("Test Loss:", loss)
+print("Test Accuracy:", accuracy)
+
